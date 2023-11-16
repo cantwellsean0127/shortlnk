@@ -44,6 +44,14 @@ const readURLs = async (req, res) => {
 // Whenever this route is called, returns all of a user's URLs
 const readURL = async (req, res) => {
 
+    // Verifies the id is a valid integer
+    const idIntegerValue = parseInt(req.params.id)
+    if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.params.id) {
+        sendBadRequest(req, res, "Non-integer value passed as id.")
+        return
+    }
+    req.params.id = idIntegerValue
+
     // Performs the query and returns the results to the client
     const query_options = [req.params.id]
     const database_client_response = await database_client.query("SELECT * FROM urls WHERE id = $1;", query_options)
