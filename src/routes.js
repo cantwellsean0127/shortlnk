@@ -123,11 +123,24 @@ const sendBadRequest = (req, res, err) => {
     res.send(err)
 }
 
+// Whenever this route is called, redirect users to the target URL
+const redirect = async (req, res) => {
+    const query_options = [new URL(process.env.server_address + req.url).toString()]
+    const database_client_response = await database_client.query("SELECT target_url FROM urls WHERE shortened_url = $1;", query_options)
+    if (database_client_response.rowCount === 0) {
+        res.redirect("/page-not-found.html")
+        console.log(query_options)
+    } else {
+        res.redirect(database_client_response.rows[0].target_url)
+    }
+}
+
 // Exports our routes
 export default {
     createShortenedURL: createShortenedURL,
     readURLs: readURLs,
     readURL: readURL,
     updateURL: updateURL,
-    deleteURL: deleteURL
+    deleteURL: deleteURL,
+    redirect: redirect
 }

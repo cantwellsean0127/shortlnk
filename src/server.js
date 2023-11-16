@@ -10,6 +10,9 @@ const server = express()
 // This built-in middleware parses the body of any incoming requests and converts it into an object if the body is a JSON string
 server.use(express.json())
 
+// Middleware that will statically server files within the public directory. This is where our front-end file will be located.
+server.use(express.static("./public"))
+
 // Route for creating a new url
 server.post("/api/urls", routes.createShortenedURL)
 
@@ -25,6 +28,9 @@ server.patch("/api/urls/", routes.updateURL)
 
 // Route for deleting a user's URL
 server.delete("/api/urls/", routes.deleteURL)
+
+// Route for redirecting users to another url
+server.get("/*", routes.redirect)
 
 // Exports our server object
 export default server
