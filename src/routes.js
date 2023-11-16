@@ -14,6 +14,12 @@ const createShortenedURL = async (req, res) => {
     let database_response = await database_client.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
     const shortended_url = `${process.env.server_address}/${database_response.rows[0].to_hex}`
 
+    // Verifies the target url was provided
+    if (req.body.target_url === undefined) {
+        sendBadRequest(req, res, "No target URL provided.")
+        return
+    }
+
     // Parses the provided target URL to verify it's format
     try {
         req.body.target_url = new URL(req.body.target_url).toString()
