@@ -20,5 +20,8 @@ server.get("/api/urls/", routes.readURLs)
 server.put("/api/urls/", routes.updateURL)
 server.patch("/api/urls/", routes.updateURL)
 
+// Route for deleting a user's URL
+server.delete("/api/urls/", routes.deleteURL)
+
 // Exports our server object
 export default server

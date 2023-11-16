@@ -33,7 +33,16 @@ const updateURL = async (req, res) => {
 
     // Performs the query and returns the results to the client
     const query_options = [req.body.name, req.body.target_url, req.body.id]
-    const database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 where id = $3 RETURNING *;", query_options)
+    const database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 RETURNING *;", query_options)
+    res.json(database_response.rows[0])
+}
+
+// Whenever this route is called, delete a URL
+const deleteURL = async (req, res) => {
+
+    // Performs the query and returns the results to the client
+    const query_options = [req.body.id]
+    const database_response = await database_client.query("DELETE FROM urls WHERE id = $1 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -41,5 +50,6 @@ const updateURL = async (req, res) => {
 export default {
     createShortenedURL: createShortenedURL,
     readURLs: readURLs,
-    updateURL: updateURL
+    updateURL: updateURL,
+    deleteURL: deleteURL
 }
