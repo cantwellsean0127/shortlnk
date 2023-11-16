@@ -13,5 +13,8 @@ server.use(express.json())
 // Route for creating a new url
 server.post("/api/urls", routes.createShortenedURL)
 
+// Route for reading a user's URLs
+server.get("/api/urls/", routes.readURLs)
+
 // Exports our server object
 export default server

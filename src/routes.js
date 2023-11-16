@@ -20,8 +20,14 @@ const createShortenedURL = async (req, res) => {
     res.json(database_response.rows[0])
 }
 
+// Whenever this route is called, returns all of a user's URLs
+const readURLs = async (req, res) => {
+    const database_client_response = await database_client.query("SELECT * FROM urls;")
+    res.json(database_client_response.rows)
+}
 
 // Exports our routes
 export default {
-    createShortenedURL: createShortenedURL
+    createShortenedURL: createShortenedURL,
+    readURLs: readURLs
 }
