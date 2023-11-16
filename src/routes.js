@@ -14,6 +14,19 @@ const createShortenedURL = async (req, res) => {
     let database_response = await database_client.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
     const shortended_url = `${process.env.server_address}/${database_response.rows[0].to_hex}`
 
+    // Parses the provided target URL to verify it's format
+    try {
+        req.body.target_url = new URL(req.body.target_url).toString()
+    } catch (err) {
+        sendBadRequest(req, res, err)
+        return
+    }
+
+    // If a name was not provided, set the name to "Unnamed"
+    if (req.body.name === "" || req.body.name === undefined) {
+        req.body.name = "Unnamed"
+    }
+
     // Performs the query and returns the results to the client
     const query_options = [req.body.name, req.body.target_url, shortended_url]
     database_response = await database_client.query("INSERT INTO urls (name, target_url, shortened_url) VALUES ($1, $2, $3) RETURNING *;", query_options)
@@ -53,6 +66,12 @@ const deleteURL = async (req, res) => {
     const query_options = [req.body.id]
     const database_response = await database_client.query("DELETE FROM urls WHERE id = $1 RETURNING *;", query_options)
     res.json(database_response.rows[0])
+}
+
+// This function is used to send a bad request response
+const sendBadRequest = (req, res, err) => {
+    res.status(400)
+    res.send(err)
 }
 
 // Exports our routes
