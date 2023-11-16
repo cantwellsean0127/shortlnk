@@ -103,6 +103,14 @@ const updateURL = async (req, res) => {
 // Whenever this route is called, delete a URL
 const deleteURL = async (req, res) => {
 
+    // Verifies the id is a valid integer
+    const idIntegerValue = parseInt(req.body.id)
+    if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.body.id) {
+        sendBadRequest(req, res, "Non-integer value passed as id.")
+        return
+    }
+    req.body.id = idIntegerValue
+
     // Performs the query and returns the results to the client
     const query_options = [req.body.id]
     const database_response = await database_client.query("DELETE FROM urls WHERE id = $1 RETURNING *;", query_options)
