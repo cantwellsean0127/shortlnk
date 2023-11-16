@@ -67,6 +67,33 @@ const readURL = async (req, res) => {
 // Whenever this route is called, updates a URL
 const updateURL = async (req, res) => {
 
+    // Verifies the id is a valid integer
+    const idIntegerValue = parseInt(req.params.id)
+    if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.params.id) {
+        sendBadRequest(req, res, "Non-integer value passed as id.")
+        return
+    }
+    req.params.id = idIntegerValue
+
+    // Verifies the target url was provided
+    if (req.body.target_url === undefined) {
+        sendBadRequest(req, res, "No target URL provided.")
+        return
+    }
+
+    // Parses the provided target URL to verify it's format
+    try {
+        req.body.target_url = new URL(req.body.target_url).toString()
+    } catch (err) {
+        sendBadRequest(req, res, err)
+        return
+    }
+
+    // If a name was not provided, set the name to "Unnamed"
+    if (req.body.name === "" || req.body.name === undefined) {
+        req.body.name = "Unnamed"
+    }
+
     // Performs the query and returns the results to the client
     const query_options = [req.body.name, req.body.target_url, req.body.id]
     const database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 RETURNING *;", query_options)
