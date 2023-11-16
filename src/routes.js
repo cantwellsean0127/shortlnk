@@ -22,12 +22,24 @@ const createShortenedURL = async (req, res) => {
 
 // Whenever this route is called, returns all of a user's URLs
 const readURLs = async (req, res) => {
+
+    // Performs the query and returns the results to the client
     const database_client_response = await database_client.query("SELECT * FROM urls;")
     res.json(database_client_response.rows)
+}
+
+// Whenever this route is called, updates a URL
+const updateURL = async (req, res) => {
+
+    // Performs the query and returns the results to the client
+    const query_options = [req.body.name, req.body.target_url, req.body.id]
+    const database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 where id = $3 RETURNING *;", query_options)
+    res.json(database_response.rows[0])
 }
 
 // Exports our routes
 export default {
     createShortenedURL: createShortenedURL,
-    readURLs: readURLs
+    readURLs: readURLs,
+    updateURL: updateURL
 }
