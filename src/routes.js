@@ -28,6 +28,15 @@ const readURLs = async (req, res) => {
     res.json(database_client_response.rows)
 }
 
+// Whenever this route is called, returns all of a user's URLs
+const readURL = async (req, res) => {
+
+    // Performs the query and returns the results to the client
+    const query_options = [req.params.id]
+    const database_client_response = await database_client.query("SELECT * FROM urls WHERE id = $1;", query_options)
+    res.json(database_client_response.rows)
+}
+
 // Whenever this route is called, updates a URL
 const updateURL = async (req, res) => {
 
@@ -50,6 +59,7 @@ const deleteURL = async (req, res) => {
 export default {
     createShortenedURL: createShortenedURL,
     readURLs: readURLs,
+    readURL: readURL,
     updateURL: updateURL,
     deleteURL: deleteURL
 }

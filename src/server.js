@@ -13,8 +13,11 @@ server.use(express.json())
 // Route for creating a new url
 server.post("/api/urls", routes.createShortenedURL)
 
-// Route for reading a user's URLs
+// Route for reading a all user's URLs
 server.get("/api/urls/", routes.readURLs)
+
+// Route for reading a all user's URLs
+server.get("/api/urls/:id", routes.readURL)
 
 // Route for updating a user's URL
 server.put("/api/urls/", routes.updateURL)
