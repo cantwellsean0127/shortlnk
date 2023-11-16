@@ -68,12 +68,14 @@ const readURL = async (req, res) => {
 const updateURL = async (req, res) => {
 
     // Verifies the id is a valid integer
-    const idIntegerValue = parseInt(req.params.id)
-    if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.params.id) {
-        sendBadRequest(req, res, "Non-integer value passed as id.")
-        return
+    if (typeof req.body.id !== Number) {
+        const idIntegerValue = parseInt(req.body.id)
+        if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.body.id) {
+            sendBadRequest(req, res, "Non-integer value passed as id.")
+            return
+        }
+        req.body.id = idIntegerValue
     }
-    req.params.id = idIntegerValue
 
     // Verifies the target url was provided
     if (req.body.target_url === undefined) {
@@ -104,12 +106,14 @@ const updateURL = async (req, res) => {
 const deleteURL = async (req, res) => {
 
     // Verifies the id is a valid integer
-    const idIntegerValue = parseInt(req.body.id)
-    if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.body.id) {
-        sendBadRequest(req, res, "Non-integer value passed as id.")
-        return
+    if (typeof req.body.id !== Number) {
+        const idIntegerValue = parseInt(req.body.id)
+        if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.body.id) {
+            sendBadRequest(req, res, "Non-integer value passed as id.")
+            return
+        }
+        req.body.id = idIntegerValue
     }
-    req.body.id = idIntegerValue
 
     // Performs the query and returns the results to the client
     const query_options = [req.body.id]
