@@ -7,13 +7,9 @@ import pg from "pg"
 // Configures our enviroment variables
 dotenv.config()
 
-//  Creates our database client
+// Creates our database client from a connection string
 const database_client = new pg.Client({
-    host: process.env.database_host,
-    port: process.env.database_port,
-    database: process.env.database_name,
-    user: process.env.database_user,
-    password: process.env.database_pass
+    connectionString: process.env.database_connection_string
 })
 
 // Attempts to connect to our PostgreSQL database

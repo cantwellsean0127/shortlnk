@@ -12,7 +12,7 @@ const createShortenedURL = async (req, res) => {
 
     // Generates the shortened URL
     let database_response = await database_client.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
-    const shortended_url = `${process.env.server_address}/${database_response.rows[0].to_hex}`
+    const shortended_url = `/${database_response.rows[0].to_hex}`
 
     // Verifies the target url was provided
     if (req.body.target_url === undefined) {
@@ -129,11 +129,10 @@ const sendBadRequest = (req, res, err) => {
 
 // Whenever this route is called, redirect users to the target URL
 const redirect = async (req, res) => {
-    const query_options = [new URL(process.env.server_address + req.url).toString()]
+    const query_options = [req.url]
     const database_client_response = await database_client.query("SELECT target_url FROM urls WHERE shortened_url = $1;", query_options)
     if (database_client_response.rowCount === 0) {
         res.redirect("/page-not-found.html")
-        console.log(query_options)
     } else {
         res.redirect(database_client_response.rows[0].target_url)
     }
