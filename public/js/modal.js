@@ -26,11 +26,11 @@ const createURLHandler = async (event) => {
     const api_response = await createURL(name, target_url)
     if (api_response.ok) {
         fetchAllCards()
+        closeCreateEditModal()
     } else {
         const api_data = await api_response.json()
         alert(api_data.message)
     }
-    closeCreateEditModal()
 }
 
 // Shows the edit modal
@@ -61,11 +61,11 @@ const editURLHandler = async (event) => {
     const api_response = await updateURL(id, name, target_url)
     if (api_response.ok) {
         fetchAllCards()
+        closeCreateEditModal()
     } else {
         const api_data = await api_response.json()
         alert(api_data.message)
     }
-    closeCreateEditModal()
 }
 
 // Delete URL handler
@@ -84,11 +84,11 @@ const showDeleteModal = (event) => {
         const api_response = await deleteURL(id)
         if (api_response.ok) {
             fetchAllCards()
+            closeDeleteModal()
         } else {
             const api_data = await api_response.json()
             alert(api_data.message)
         }
-        closeDeleteModal()
     }
 
     deleteModal.querySelector(".deleteButton").addEventListener("click", deleteURLHandler)
