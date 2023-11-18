@@ -1,0 +1,27 @@
+#auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+}
+
+#auth-container h1 {
+    color: var(--primary-color-darker);
+}
+
+#auth-container form {
+    background: var(--secondary-color);
+    padding: 20px;
+    width: 300px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    margin: 50px auto;
+    text-align: center;
+}
+
+#auth-container span {
+    color: var(--primary-color-darker);
+    cursor: pointer;
+    text-decoration: underline;
+}
