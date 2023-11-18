@@ -11,6 +11,8 @@ const closeCreateEditModal = () => {
 
 // Shows the create modal
 const showCreateModal = () => {
+    createEditModal.querySelector("h2").textContent = "Create New URL"
+    createEditModal.querySelector("form").querySelector("button").textContent = "Create URL"
     createEditModal.addEventListener("submit", createURLHandler)
     createEditModal.style.setProperty("display", "block")
 }
@@ -39,6 +41,8 @@ const showEditModal = (event) => {
     const editIcon = event.target
     const card = editIcon.parentNode
 
+    createEditModal.querySelector("h2").textContent = "Edit URL"
+    createEditModal.querySelector("form").querySelector("button").textContent = "Update URL"
     createEditModal.querySelector("#form-id").value = card.id.split("-")[1]
     createEditModal.querySelector("#form-name").value = card.querySelector(".name").textContent
     createEditModal.querySelector("#form-target-url").value = card.querySelector(".target-url").textContent
