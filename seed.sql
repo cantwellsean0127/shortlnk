@@ -18,5 +18,3 @@ CREATE TABLE urls (
     shortened_url TEXT NOT NULL,
     user_id INTEGER REFERENCES users(id)
 );
-
-INSERT INTO users (username, password_hash, password_salt) VALUES ('user', '25e185140aade229aea753527ce58d67fe5a5b82b99645799bb2b9751b762442', 'SALTSALTSALTSALTSALTSALTSALTSALT');
