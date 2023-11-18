@@ -47,6 +47,10 @@ const registerUser = async (req, res) => {
     // Inserts the user data into the database'
     query_options = [req.body.username, password_hash, salt]
     database_response = await database_client.query("INSERT INTO users (username, password_hash, password_salt) VALUES ($1, $2, $3) RETURNING *;", query_options)
+    if (database_response.rowCount === 0) {
+        sendBadRequest(req, res, "Unable to register account.")
+        return
+    }
 
     // Logs the new user in
     loginUser(req, res)
@@ -80,9 +84,22 @@ const loginUser = async (req, res) => {
         session_id += Math.round(Math.random() * 255).toString(16).padStart(2, "0")
     }
 
+    // Get's the user's id
+    query_options = [req.body.username]
+    database_response = await database_client.query("SELECT id FROM users WHERE username = $1;", query_options)
+    if (database_response.rowCount === 0) {
+        sendBadRequest(req, res, "Credentials are invalid.")
+        return
+    }
+    const user_id = database_response.rows[0].id
+
     // Updates the user's session id in the database
-    query_options = [session_id, req.body.username]
-    database_response = await database_client.query("UPDATE users SET session_id = $1 WHERE username = $2 RETURNING *;", query_options)
+    query_options = [session_id, user_id]
+    database_response = await database_client.query("INSERT INTO sessions (id, user_id) VALUES ($1, $2) RETURNING *;", query_options)
+    if (database_response.rowCount === 0) {
+        sendBadRequest(req, res, "Unable to create session.")
+        return
+    }
 
     // Sets the cookie to be the session id
     const cookie_options = {
@@ -92,8 +109,8 @@ const loginUser = async (req, res) => {
     }
     res.cookie("session_id", session_id, cookie_options)
 
-    // Sends nothing right now
-    res.json([])
+    // Sends success
+    res.json({ message: "Success" })
 }
 
 // Whenever this route is called, logs out a user
@@ -105,18 +122,9 @@ const logoutUser = async (req, res) => {
         return
     }
 
-    // Get's the current user's id
-    let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT id FROM users WHERE session_id = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Invalid session id.")
-        return
-    }
-    const user_id = database_response.rows[0].id
-
     // Removes the user's session id
-    query_options = [user_id]
-    database_response = await database_client.query("UPDATE users SET session_id = null WHERE id = $1;", query_options)
+    query_options = [req.cookies.session_id]
+    database_response = await database_client.query("DELETE FROM sessions WHERE id = $1;", query_options)
 
     // Clears the session id cookie
     res.clearCookie("session_id")
@@ -136,12 +144,12 @@ const createShortenedURL = async (req, res) => {
 
     // Get's the current user's id
     let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT id FROM users WHERE session_id = $1;", query_options)
+    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Invalid session id.")
         return
     }
-    const user_id = database_response.rows[0].id
+    const user_id = database_response.rows[0].user_id
 
     // Generates the shortened URL
     database_response = await database_client.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
@@ -183,12 +191,12 @@ const readURLs = async (req, res) => {
 
     // Get's the current user's id
     let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT id FROM users WHERE session_id = $1;", query_options)
+    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Invalid session id.")
         return
     }
-    const user_id = database_response.rows[0].id
+    const user_id = database_response.rows[0].user_id
 
     // Performs the query and returns the results to the client
     query_options = [user_id]
@@ -207,12 +215,12 @@ const readURL = async (req, res) => {
 
     // Get's the current user's id
     let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT id FROM users WHERE session_id = $1;", query_options)
+    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Invalid session id.")
         return
     }
-    const user_id = database_response.rows[0].id
+    const user_id = database_response.rows[0].user_id
 
     // Verifies the id is a valid integer
     const idIntegerValue = parseInt(req.params.id)
@@ -223,8 +231,8 @@ const readURL = async (req, res) => {
     req.params.id = idIntegerValue
 
     // Performs the query and returns the results to the client
-    query_options = [req.params.id, user_id]
-    database_response = await database_client.query("SELECT * FROM urls WHERE id = $1 AND user_id = $2;", query_options)
+    query_options = [req.params.id]
+    database_response = await database_client.query("SELECT * FROM urls WHERE id = $1;", query_options)
     res.json(database_response.rows)
 }
 
@@ -239,18 +247,18 @@ const updateURL = async (req, res) => {
 
     // Get's the current user's id
     let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT id FROM users WHERE session_id = $1;", query_options)
+    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Invalid session id.")
         return
     }
-    const user_id = database_response.rows[0].id
+    const user_id = database_response.rows[0].user_id
 
     // Verifies the id is a valid integer
     if (typeof req.body.id !== "number") {
         const idIntegerValue = parseInt(req.body.id)
         if (isNaN(idIntegerValue) || idIntegerValue + "" !== req.body.id) {
-            sendBadRequest(req, res, "Non-integer value passed as id. -> " + typeof req.body.id + " -> " + req.body.id)
+            sendBadRequest(req, res, "Non-integer value passed as id.")
             return
         }
         req.body.id = idIntegerValue
@@ -276,8 +284,8 @@ const updateURL = async (req, res) => {
     }
 
     // Performs the query and returns the results to the client
-    query_options = [req.body.name, req.body.target_url, req.body.id, user_id]
-    database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 AND user_id = $4 RETURNING *;", query_options)
+    query_options = [req.body.name, req.body.target_url, req.body.id]
+    database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -292,12 +300,12 @@ const deleteURL = async (req, res) => {
 
     // Get's the current user's id
     let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT id FROM users WHERE session_id = $1;", query_options)
+    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Invalid session id.")
         return
     }
-    const user_id = database_response.rows[0].id
+    const user_id = database_response.rows[0].user_id
 
     // Verifies the id is a valid integer
     if (typeof req.body.id !== "number") {
@@ -310,8 +318,8 @@ const deleteURL = async (req, res) => {
     }
 
     // Performs the query and returns the results to the client
-    query_options = [req.body.id, user_id]
-    database_response = await database_client.query("DELETE FROM urls WHERE id = $1 AND user_id = $2 RETURNING *;", query_options)
+    query_options = [req.body.id]
+    database_response = await database_client.query("DELETE FROM urls WHERE id = $1 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 

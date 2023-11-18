@@ -7,8 +7,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
     password_hash CHAR(64) NOT NULL,
-    password_salt CHAR(32) NOT NULL,
-    session_id CHAR(64)
+    password_salt CHAR(32) NOT NULL
 );
 
 CREATE TABLE urls (
@@ -17,4 +16,9 @@ CREATE TABLE urls (
     target_url TEXT NOT NULL,
     shortened_url TEXT NOT NULL,
     user_id INTEGER REFERENCES users(id)
+);
+
+CREATE TABLE sessions (
+    id CHAR(64) PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) NOT NUll
 );
