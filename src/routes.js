@@ -157,7 +157,7 @@ const createShortenedURL = async (req, res) => {
     try {
         req.body.target_url = new URL(req.body.target_url).toString()
     } catch (err) {
-        sendBadRequest(req, res, err)
+        sendBadRequest(req, res, err.code)
         return
     }
 
@@ -266,7 +266,7 @@ const updateURL = async (req, res) => {
     try {
         req.body.target_url = new URL(req.body.target_url).toString()
     } catch (err) {
-        sendBadRequest(req, res, err)
+        sendBadRequest(req, res, err.code)
         return
     }
 
