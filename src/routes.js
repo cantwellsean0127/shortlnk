@@ -105,7 +105,7 @@ const loginUser = async (req, res) => {
 
     // Sets the cookie to be the session id
     const cookie_options = {
-        secure: process.env.secure_cookies,
+        secure: process.env.secure_cookies === "true",
         sameSite: "Strict",
         httpOnly: true
     }
