@@ -77,11 +77,16 @@ const loginUser = async (req, res) => {
         return
     }
 
-    req.session.authenticated = true
-    req.session.user_id = user_id
+    // Regenerates the session
+    req.session.regenerate((err) => {
 
-    // Sends success
-    res.json({ message: "Success" })
+        // Sets session variables
+        req.session.authenticated = true
+        req.session.user_id = user_id
+
+        // Sends success
+        res.json({ message: "Success" })
+    })
 }
 
 // Whenever this route is called, create a new URL
