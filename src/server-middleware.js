@@ -10,6 +10,9 @@ import connect_pg_simple from "connect-pg-simple"
 // The express-rate-limit module allows us to limit the rate at which requests are handled
 import express_rate_limit from "express-rate-limit"
 
+// The lusca module is a comprehensive security library for Express which includes CSRF protection among other features
+import lusca from "lusca"
+
 // Imports our database pool object
 import database_pool from "./database.js"
 
@@ -40,4 +43,6 @@ export default (server) => {
         }
     }))
 
+    // This middleware is used to protect against CSRF attacks
+    server.use(lusca.csrf())
 }

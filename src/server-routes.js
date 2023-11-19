@@ -10,6 +10,11 @@ import database_pool from "./database.js"
 // Configures our enviroment variables
 dotenv.config()
 
+// Whenever this route is called, return a session's CSRF token
+const csrfToken = (req, res) => {
+    res.json({ csrf_token: req.csrfToken() })
+}
+
 // Whenever this route is called, return whether a user is authenticated
 const authenticated = (req, res) => {
     res.json({ authenticated: req.session.authenticated === true })
@@ -253,6 +258,9 @@ const redirect = async (req, res) => {
 
 // Exports our routes
 export default (server) => {
+
+    // Route for getting a session's CSRF token
+    server.get("/api/csrf-token", csrfToken)
 
     // Route for determining whether a user is authenticated or no
     server.get("/api/authenticated", authenticated)
