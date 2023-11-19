@@ -2,6 +2,9 @@ const authenticationContainer = document.querySelector("#auth-container")
 const loginForm = document.querySelector("#login-form")
 const registrationForm = document.querySelector("#registration-form")
 
+// Sets the authentication forms to be hidden by default
+authenticationContainer.style.setProperty("display", "none")
+
 // This function displays the registration form and hides the login form
 const showLoginForm = () => {
     loginForm.style.setProperty("display", "block")
@@ -21,7 +24,6 @@ loginForm.addEventListener("submit", async (event) => {
     const password = loginForm.querySelector("#login-password").value
     const api_response = await login(username, password)
     if (api_response.ok) {
-        loginForm.style.setProperty("display", "none")
         authenticationContainer.style.setProperty("display", "none")
         showDashboard()
     } else {
@@ -37,12 +39,10 @@ registrationForm.addEventListener("submit", async (event) => {
     const password = registrationForm.querySelector("#registration-password").value
     const api_response = await register(username, password)
     if (api_response.ok) {
-        registrationForm.style.setProperty("display", "none")
         authenticationContainer.style.setProperty("display", "none")
         showDashboard()
     } else {
         const api_data = await api_response.json()
-        console.log(api_data.message)
-        alert(api_data)
+        alert(api_data.message)
     }
 })

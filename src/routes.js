@@ -107,7 +107,7 @@ const loginUser = async (req, res) => {
     const cookie_options = {
         secure: process.env.secure_cookies === "true",
         sameSite: "Strict",
-        httpOnly: true
+        httpOnly: false
     }
     res.cookie("session_id", session_id, cookie_options)
 

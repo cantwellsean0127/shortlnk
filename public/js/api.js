@@ -2,7 +2,7 @@
 async function apiRequest(url, method, body = undefined) {
 
     // Creates the options for our request
-    const options = { method: method, headers: { "Content-Type": "application/json" } }
+    const options = { method: method, headers: { "Content-Type": "application/json" }, credentials: "include" }
 
     // If we are sending a body, stringify it and add it to the options object
     if (body) options.body = JSON.stringify(body)

@@ -3,10 +3,14 @@ const cards_container = document.querySelector("#cards-container")
 // This function retrieves all cards, but keeps them hidden
 const fetchAllCards = async () => {
     cards_container.innerHTML = ""
-    const response = await apiRequest("/api/urls", "GET")
-    const data = await response.json()
-    for (const card_data of data) {
-        createCard(card_data)
+    const api_response = await apiRequest("/api/urls", "GET")
+    const api_data = await api_response.json()
+    if (api_response.ok) {
+        for (const card_data of api_data) {
+            createCard(card_data)
+        }
+    } else {
+        alert(api_data.message)
     }
 }
 
