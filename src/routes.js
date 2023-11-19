@@ -1,11 +1,8 @@
 // The dotenv module allows us to use enviroment variables stored in the .env file
 import dotenv from "dotenv"
 
-// The seedrandom module allows us to generate random numbers from a seed
-import seedrandom from "seedrandom"
-
 // The crytpo module allows us to perform cryptographic functions
-import crypto from "crypto"
+import bcrypt from "bcrypt"
 
 // Imports our database client object
 import database_client from "./database.js"
@@ -38,15 +35,8 @@ const registerUser = async (req, res) => {
         return
     }
 
-    // Get's the user's salt
-    const getRandomNumber = seedrandom(process.env.salt_seed + req.body.username)
-    let salt = ""
-    for (let iteration = 0; iteration < 16; iteration++) {
-        salt += Math.round(getRandomNumber() * 255).toString(16).padStart(2, "0")
-    }
-
-    // Hashes the password with the salt
-    const password_hash = crypto.createHash("sha256").update(salt + req.body.password).digest("hex")
+    // Hashes the password
+    const password_hash = bcrypt.hashSync(req.body.password, parseInt(process.env.salt_rounds))
 
     // Inserts the user data into the database'
     query_options = [req.body.username, password_hash]
@@ -63,24 +53,27 @@ const registerUser = async (req, res) => {
 // Whenever this route is called, login a user
 const loginUser = async (req, res) => {
 
-    // Get's the user's salt
-    const getRandomNumber = seedrandom(process.env.salt_seed + req.body.username)
-    let salt = ""
-    for (let iteration = 0; iteration < 16; iteration++) {
-        salt += Math.round(getRandomNumber() * 255).toString(16).padStart(2, "0")
-    }
-
-    const password_hash = crypto.createHash("sha256").update(salt + req.body.password).digest("hex")
-
-    // Verifies credentials
-    let query_options = [req.body.username, password_hash]
-    let database_response = await database_client.query("SELECT username FROM users WHERE username = $1 AND password_hash = $2;", query_options)
+    // Get's the user's id
+    let query_options = [req.body.username]
+    let database_response = await database_client.query("SELECT id FROM users WHERE username = $1;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Credentials are invalid.")
         return
     }
+    const user_id = database_response.rows[0].id
 
-    // Generates a random 64 byte session id for the password hash and makes sure it is not already taken
+    // Gets the password hash
+    query_options = [user_id]
+    database_response = await database_client.query("SELECT password_hash FROM users WHERE id = $1;", query_options)
+    const password_hash = database_response.rows[0].password_hash
+
+    // Compares the passwords
+    if (!bcrypt.compareSync(req.body.password, password_hash)) {
+        sendBadRequest(req, res, "Credentials are invalid." + "     " + req.body.password + "     " + password_hash)
+        return
+    }
+
+    // Generates a random 64 byte session id and makes sure it is not already taken
     let session_id = undefined
     let session_id_taken = true
     do {
@@ -94,15 +87,6 @@ const loginUser = async (req, res) => {
             session_id_taken = false
         }
     } while (session_id_taken)
-
-    // Get's the user's id
-    query_options = [req.body.username]
-    database_response = await database_client.query("SELECT id FROM users WHERE username = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Credentials are invalid.")
-        return
-    }
-    const user_id = database_response.rows[0].id
 
     // Updates the user's session id in the database
     query_options = [session_id, user_id]
