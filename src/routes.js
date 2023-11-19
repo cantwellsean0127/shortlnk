@@ -233,9 +233,9 @@ const readURL = async (req, res) => {
     req.params.id = idIntegerValue
 
     // Performs the query and returns the results to the client
-    query_options = [req.params.id]
-    database_response = await database_client.query("SELECT * FROM urls WHERE id = $1;", query_options)
-    res.json(database_response.rows)
+    query_options = [req.params.id, user_id]
+    database_response = await database_client.query("SELECT * FROM urls WHERE id = $1 AND user_id = $2;", query_options)
+    res.json(database_response.rows[0])
 }
 
 // Whenever this route is called, updates a URL
@@ -286,8 +286,8 @@ const updateURL = async (req, res) => {
     }
 
     // Performs the query and returns the results to the client
-    query_options = [req.body.name, req.body.target_url, req.body.id]
-    database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 RETURNING *;", query_options)
+    query_options = [req.body.name, req.body.target_url, req.body.id, user_id]
+    database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 AND user_id = $4 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -320,8 +320,8 @@ const deleteURL = async (req, res) => {
     }
 
     // Performs the query and returns the results to the client
-    query_options = [req.body.id]
-    database_response = await database_client.query("DELETE FROM urls WHERE id = $1 RETURNING *;", query_options)
+    query_options = [req.body.id, user_id]
+    database_response = await database_client.query("DELETE FROM urls WHERE id = $1 AND user_id = $2 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
