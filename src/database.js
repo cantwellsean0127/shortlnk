@@ -8,18 +8,18 @@ import pg from "pg"
 dotenv.config()
 
 // Creates our database client from a connection string
-const database_client = new pg.Client({
+const database_pool = new pg.Pool({
     connectionString: process.env.database_connection_string
 })
 
 // Attempts to connect to our PostgreSQL database
 // On failure, exits the program
 try {
-    await database_client.connect()
+    await database_pool.connect()
 } catch (err) {
     console.log(err)
     process.exit(1)
 }
 
 // Exports our database client object
-export default database_client
+export default database_pool

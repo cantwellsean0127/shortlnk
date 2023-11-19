@@ -4,8 +4,8 @@ import dotenv from "dotenv"
 // The crytpo module allows us to perform cryptographic functions
 import bcrypt from "bcrypt"
 
-// Imports our database client object
-import database_client from "./database.js"
+// Imports our database pool object
+import database_pool from "./database.js"
 
 // Configures our enviroment variables
 dotenv.config()
@@ -32,7 +32,7 @@ const registerUser = async (req, res) => {
 
     // Verifies the username passed does not already exists
     let query_options = [req.body.username]
-    let database_response = await database_client.query("SELECT username FROM users WHERE username = $1;", query_options)
+    let database_response = await database_pool.query("SELECT username FROM users WHERE username = $1;", query_options)
     if (database_response.rowCount !== 0) {
         res.status(409)
         res.json({ message: `Username ${req.body.username} already exists.` })
@@ -44,7 +44,7 @@ const registerUser = async (req, res) => {
 
     // Inserts the user data into the database'
     query_options = [req.body.username, password_hash]
-    database_response = await database_client.query("INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING *;", query_options)
+    database_response = await database_pool.query("INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING *;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Unable to register account.")
         return
@@ -59,7 +59,7 @@ const loginUser = async (req, res) => {
 
     // Get's the user's id
     let query_options = [req.body.username]
-    let database_response = await database_client.query("SELECT id FROM users WHERE username = $1;", query_options)
+    let database_response = await database_pool.query("SELECT id FROM users WHERE username = $1;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Credentials are invalid.")
         return
@@ -68,7 +68,7 @@ const loginUser = async (req, res) => {
 
     // Gets the password hash
     query_options = [user_id]
-    database_response = await database_client.query("SELECT password_hash FROM users WHERE id = $1;", query_options)
+    database_response = await database_pool.query("SELECT password_hash FROM users WHERE id = $1;", query_options)
     const password_hash = database_response.rows[0].password_hash
 
     // Compares the passwords
@@ -94,7 +94,7 @@ const createShortenedURL = async (req, res) => {
     }
 
     // Generates the shortened URL
-    let database_response = await database_client.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
+    let database_response = await database_pool.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
     const shortended_url = `/${database_response.rows[0].to_hex}`
 
     // Verifies the target url was provided
@@ -118,7 +118,7 @@ const createShortenedURL = async (req, res) => {
 
     // Performs the query and returns the results to the client
     let query_options = [req.body.name, req.body.target_url, shortended_url, req.session.user_id]
-    database_response = await database_client.query("INSERT INTO urls (name, target_url, shortened_url, user_id) VALUES ($1, $2, $3, $4) RETURNING *;", query_options)
+    database_response = await database_pool.query("INSERT INTO urls (name, target_url, shortened_url, user_id) VALUES ($1, $2, $3, $4) RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -133,7 +133,7 @@ const readURLs = async (req, res) => {
 
     // Performs the query and returns the results to the client
     const query_options = [req.session.user_id]
-    const database_response = await database_client.query("SELECT * FROM urls WHERE user_id = $1;", query_options)
+    const database_response = await database_pool.query("SELECT * FROM urls WHERE user_id = $1;", query_options)
     res.json(database_response.rows)
 }
 
@@ -156,7 +156,7 @@ const readURL = async (req, res) => {
 
     // Performs the query and returns the results to the client
     const query_options = [req.params.id, req.session.user_id]
-    const database_response = await database_client.query("SELECT * FROM urls WHERE id = $1 AND user_id = $2;", query_options)
+    const database_response = await database_pool.query("SELECT * FROM urls WHERE id = $1 AND user_id = $2;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -200,7 +200,7 @@ const updateURL = async (req, res) => {
 
     // Performs the query and returns the results to the client
     const query_options = [req.body.name, req.body.target_url, req.body.id, req.session.user_id]
-    const database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 AND user_id = $4 RETURNING *;", query_options)
+    const database_response = await database_pool.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 AND user_id = $4 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -225,7 +225,7 @@ const deleteURL = async (req, res) => {
 
     // Performs the query and returns the results to the client
     const query_options = [req.body.id, req.session.user_id]
-    const database_response = await database_client.query("DELETE FROM urls WHERE id = $1 AND user_id = $2 RETURNING *;", query_options)
+    const database_response = await database_pool.query("DELETE FROM urls WHERE id = $1 AND user_id = $2 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -238,7 +238,7 @@ const sendBadRequest = (req, res, err) => {
 // Whenever this route is called, redirect users to the target URL
 const redirect = async (req, res) => {
     const query_options = [req.url]
-    const database_response = await database_client.query("SELECT target_url FROM urls WHERE shortened_url = $1;", query_options)
+    const database_response = await database_pool.query("SELECT target_url FROM urls WHERE shortened_url = $1;", query_options)
     if (database_response.rowCount === 0) {
         res.redirect("/page-not-found.html")
     } else {

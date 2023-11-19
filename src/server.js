@@ -4,11 +4,17 @@ import express from "express"
 // The express-session module allows us to create and manage sessions
 import express_session from "express-session"
 
+// The connect-pg-simple module helps us with storing sessions in our database
+import connect_pg_simple from "connect-pg-simple"
+
 // The express-rate-limit module allows us to limit the rate at which requests are handled
 import express_rate_limit from "express-rate-limit"
 
 // Imports our server routes
 import routes from "./routes.js"
+
+// Imports our database pool object
+import database_pool from "./database.js"
 
 // Creates our express server instance
 const server = express()
@@ -23,7 +29,19 @@ server.use(express_rate_limit({ windowMs: 1 * 60 * 1000, max: 100 }))
 server.use(express.static("./public"))
 
 // Middleware for session management
-server.use(express_session({ secret: process.env.session_key, saveUninitialized: false, resave: false, cookie: { secure: process.env.secure_cookies === "true", sameSite: "Strict" } }))
+server.use(express_session({
+    store: new (connect_pg_simple(express_session))({
+        pool: database_pool,
+        tableName: "sessions"
+    }),
+    secret: process.env.session_key,
+    saveUninitialized: false,
+    resave: false,
+    cookie: {
+        secure: process.env.secure_cookies === "true",
+        sameSite: "Strict"
+    }
+}));
 
 // Route for determining whether a user is authenticated or no
 server.get("/api/authenticated", routes.authenticated)
