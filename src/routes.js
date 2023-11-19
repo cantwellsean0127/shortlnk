@@ -10,9 +10,13 @@ import database_client from "./database.js"
 // Configures our enviroment variables
 dotenv.config()
 
+// Whenever this route is called, return whether a user is authenticated
+const authenticated = (req, res) => {
+    res.json({ authenticated: req.session.authenticated === true })
+}
+
 // Whenever this route is called, create a new user
 const registerUser = async (req, res) => {
-    ``
 
     // Verifies the username was provided
     if (req.body.username === undefined) {
@@ -73,56 +77,8 @@ const loginUser = async (req, res) => {
         return
     }
 
-    // Generates a random 64 byte session id and makes sure it is not already taken
-    let session_id = undefined
-    let session_id_taken = true
-    do {
-        session_id = ""
-        for (let iteration = 0; iteration < 32; iteration++) {
-            session_id += Math.round(Math.random() * 255).toString(16).padStart(2, "0")
-        }
-        query_options = [session_id]
-        database_response = await database_client.query("SELECT id FROM sessions WHERE id = $1;", query_options)
-        if (database_response.rowCount === 0) {
-            session_id_taken = false
-        }
-    } while (session_id_taken)
-
-    // Updates the user's session id in the database
-    query_options = [session_id, user_id]
-    database_response = await database_client.query("INSERT INTO sessions (id, user_id) VALUES ($1, $2) RETURNING *;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Unable to create session.")
-        return
-    }
-
-    // Sets the cookie to be the session id
-    const cookie_options = {
-        secure: process.env.secure_cookies === "true",
-        sameSite: "Strict",
-        httpOnly: false
-    }
-    res.cookie("session_id", session_id, cookie_options)
-
-    // Sends success
-    res.json({ message: "Success" })
-}
-
-// Whenever this route is called, logs out a user
-const logoutUser = async (req, res) => {
-
-    // Verifies a session id was passed
-    if (req.cookies.session_id === undefined) {
-        sendBadRequest(req, res, "No session id passed.")
-        return
-    }
-
-    // Removes the user's session id
-    query_options = [req.cookies.session_id]
-    database_response = await database_client.query("DELETE FROM sessions WHERE id = $1;", query_options)
-
-    // Clears the session id cookie
-    res.clearCookie("session_id")
+    req.session.authenticated = true
+    req.session.user_id = user_id
 
     // Sends success
     res.json({ message: "Success" })
@@ -131,23 +87,14 @@ const logoutUser = async (req, res) => {
 // Whenever this route is called, create a new URL
 const createShortenedURL = async (req, res) => {
 
-    // Verifies a session id was passed
-    if (req.cookies.session_id === undefined) {
-        sendBadRequest(req, res, "No session id passed.")
+    // Verifies a user is authenticated
+    if (!req.session.authenticated) {
+        sendBadRequest(req, res, "User not authenticated.")
         return
     }
-
-    // Get's the current user's id
-    let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Invalid session id.")
-        return
-    }
-    const user_id = database_response.rows[0].user_id
 
     // Generates the shortened URL
-    database_response = await database_client.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
+    let database_response = await database_client.query("SELECT TO_HEX(nextval('shortened_url_sequence'));")
     const shortended_url = `/${database_response.rows[0].to_hex}`
 
     // Verifies the target url was provided
@@ -170,7 +117,7 @@ const createShortenedURL = async (req, res) => {
     }
 
     // Performs the query and returns the results to the client
-    query_options = [req.body.name, req.body.target_url, shortended_url, user_id]
+    let query_options = [req.body.name, req.body.target_url, shortended_url, req.session.user_id]
     database_response = await database_client.query("INSERT INTO urls (name, target_url, shortened_url, user_id) VALUES ($1, $2, $3, $4) RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
@@ -178,44 +125,26 @@ const createShortenedURL = async (req, res) => {
 // Whenever this route is called, returns all of a user's URLs
 const readURLs = async (req, res) => {
 
-    // Verifies a session id was passed
-    if (req.cookies.session_id === undefined) {
-        sendBadRequest(req, res, "No session id passed.")
+    // Verifies a user is authenticated
+    if (!req.session.authenticated) {
+        sendBadRequest(req, res, "User not authenticated.")
         return
     }
-
-    // Get's the current user's id
-    let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Invalid session id.")
-        return
-    }
-    const user_id = database_response.rows[0].user_id
 
     // Performs the query and returns the results to the client
-    query_options = [user_id]
-    database_response = await database_client.query("SELECT * FROM urls WHERE user_id = $1;", query_options)
+    const query_options = [req.session.user_id]
+    const database_response = await database_client.query("SELECT * FROM urls WHERE user_id = $1;", query_options)
     res.json(database_response.rows)
 }
 
 // Whenever this route is called, returns all of a user's URLs
 const readURL = async (req, res) => {
 
-    // Verifies a session id was passed
-    if (req.cookies.session_id === undefined) {
-        sendBadRequest(req, res, "No session id passed.")
+    // Verifies a user is authenticated
+    if (!req.session.authenticated) {
+        sendBadRequest(req, res, "User not authenticated.")
         return
     }
-
-    // Get's the current user's id
-    let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Invalid session id.")
-        return
-    }
-    const user_id = database_response.rows[0].user_id
 
     // Verifies the id is a valid integer
     const idIntegerValue = parseInt(req.params.id)
@@ -226,28 +155,19 @@ const readURL = async (req, res) => {
     req.params.id = idIntegerValue
 
     // Performs the query and returns the results to the client
-    query_options = [req.params.id, user_id]
-    database_response = await database_client.query("SELECT * FROM urls WHERE id = $1 AND user_id = $2;", query_options)
+    const query_options = [req.params.id, req.session.user_id]
+    const database_response = await database_client.query("SELECT * FROM urls WHERE id = $1 AND user_id = $2;", query_options)
     res.json(database_response.rows[0])
 }
 
 // Whenever this route is called, updates a URL
 const updateURL = async (req, res) => {
 
-    // Verifies a session id was passed
-    if (req.cookies.session_id === undefined) {
-        sendBadRequest(req, res, "No session id passed.")
+    // Verifies a user is authenticated
+    if (!req.session.authenticated) {
+        sendBadRequest(req, res, "User not authenticated.")
         return
     }
-
-    // Get's the current user's id
-    let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Invalid session id.")
-        return
-    }
-    const user_id = database_response.rows[0].user_id
 
     // Verifies the id is a valid integer
     if (typeof req.body.id !== "number") {
@@ -279,28 +199,19 @@ const updateURL = async (req, res) => {
     }
 
     // Performs the query and returns the results to the client
-    query_options = [req.body.name, req.body.target_url, req.body.id, user_id]
-    database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 AND user_id = $4 RETURNING *;", query_options)
+    const query_options = [req.body.name, req.body.target_url, req.body.id, req.session.user_id]
+    const database_response = await database_client.query("UPDATE urls SET name = $1, target_url = $2 WHERE id = $3 AND user_id = $4 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
 // Whenever this route is called, delete a URL
 const deleteURL = async (req, res) => {
 
-    // Verifies a session id was passed
-    if (req.cookies.session_id === undefined) {
-        sendBadRequest(req, res, "No session id passed.")
+    // Verifies a user is authenticated
+    if (!req.session.authenticated) {
+        sendBadRequest(req, res, "User not authenticated.")
         return
     }
-
-    // Get's the current user's id
-    let query_options = [req.cookies.session_id]
-    let database_response = await database_client.query("SELECT user_id FROM sessions WHERE id = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Invalid session id.")
-        return
-    }
-    const user_id = database_response.rows[0].user_id
 
     // Verifies the id is a valid integer
     if (typeof req.body.id !== "number") {
@@ -313,8 +224,8 @@ const deleteURL = async (req, res) => {
     }
 
     // Performs the query and returns the results to the client
-    query_options = [req.body.id, user_id]
-    database_response = await database_client.query("DELETE FROM urls WHERE id = $1 AND user_id = $2 RETURNING *;", query_options)
+    const query_options = [req.body.id, req.session.user_id]
+    const database_response = await database_client.query("DELETE FROM urls WHERE id = $1 AND user_id = $2 RETURNING *;", query_options)
     res.json(database_response.rows[0])
 }
 
@@ -337,9 +248,9 @@ const redirect = async (req, res) => {
 
 // Exports our routes
 export default {
+    authenticated: authenticated,
     registerUser: registerUser,
     loginUser: loginUser,
-    logoutUser: logoutUser,
     createShortenedURL: createShortenedURL,
     readURLs: readURLs,
     readURL: readURL,

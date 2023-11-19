@@ -1,8 +1,8 @@
 // The express module allows us to easily create and manage HTTP servers
 import express from "express"
 
-// The cookie-parser module allows us to use and manage cookies
-import cookie_parser from "cookie-parser"
+// The express-session module allows us to create and manage sessions
+import express_session from "express-session"
 
 // The express-rate-limit module allows us to limit the rate at which requests are handled
 import express_rate_limit from "express-rate-limit"
@@ -16,23 +16,23 @@ const server = express()
 // This built-in middleware parses the body of any incoming requests and converts it into an object if the body is a JSON string
 server.use(express.json())
 
-// This build-in middleware rate limits requests to 100 per 15 minutes
-server.use(express_rate_limit({ windowMs: 15 * 60 * 1000, max: 100 }))
+// This build-in middleware rate limits requests to 100 per minute
+server.use(express_rate_limit({ windowMs: 1 * 60 * 1000, max: 100 }))
 
 // Middleware that will statically server files within the public directory. This is where our front-end file will be located.
 server.use(express.static("./public"))
 
-// Middleware for parsing cookies
-server.use(cookie_parser())
+// Middleware for session management
+server.use(express_session({ secret: process.env.session_key, saveUninitialized: false, resave: false, cookie: { secure: process.env.secure_cookies === "true", sameSite: "Strict" } }))
+
+// Route for determining whether a user is authenticated or no
+server.get("/api/authenticated", routes.authenticated)
 
 // Route for registering a user
 server.post("/api/register", routes.registerUser)
 
 // Route for logging in a user
 server.post("/api/login", routes.loginUser)
-
-// Route for logging out a user
-server.post("/api/logout", routes.logoutUser)
 
 // Route for creating a new url
 server.post("/api/urls", routes.createShortenedURL)

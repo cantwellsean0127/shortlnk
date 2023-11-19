@@ -16,8 +16,3 @@ CREATE TABLE urls (
     shortened_url TEXT NOT NULL,
     user_id INTEGER REFERENCES users(id)
 );
-
-CREATE TABLE sessions (
-    id CHAR(64) PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) NOT NUll
-);

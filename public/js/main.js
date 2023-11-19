@@ -1,19 +1,22 @@
 
 // This is where program execution starts
-const start = () => {
+const start = async () => {
+    const api_response = await authenticated()
+    const api_data = await api_response.json()
+    if (api_response.ok) {
 
-    // Gets the session id cookie
-    const session_id = getCookieValue("session_id")
+        // If a user is authenticated, show the dashboard
+        if (api_data.authenticated) {
+            showDashboard()
+        }
 
-    // If there is a session id cookie, show the user's dashboard
-    if (session_id) {
-        showDashboard()
-    }
-
-    // If there's no session id cookie, have the user login
-    else {
-        authenticationContainer.style.setProperty("display", "flex")
-        showLoginForm()
+        // Otherwise, show the login screen
+        else {
+            authenticationContainer.style.setProperty("display", "flex")
+            showLoginForm()
+        }
+    } else {
+        alert(api_data.message)
     }
 }
 
