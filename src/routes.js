@@ -80,11 +80,20 @@ const loginUser = async (req, res) => {
         return
     }
 
-    // Generates a random 64 byte session id for the password hash
-    let session_id = ""
-    for (let iteration = 0; iteration < 32; iteration++) {
-        session_id += Math.round(Math.random() * 255).toString(16).padStart(2, "0")
-    }
+    // Generates a random 64 byte session id for the password hash and makes sure it is not already taken
+    let session_id = undefined
+    let session_id_taken = true
+    do {
+        session_id = ""
+        for (let iteration = 0; iteration < 32; iteration++) {
+            session_id += Math.round(Math.random() * 255).toString(16).padStart(2, "0")
+        }
+        query_options = [session_id]
+        database_response = await database_client.query("SELECT id FROM sessions WHERE id = $1;", query_options)
+        if (database_response.rowCount === 0) {
+            session_id_taken = false
+        }
+    } while (session_id_taken)
 
     // Get's the user's id
     query_options = [req.body.username]
