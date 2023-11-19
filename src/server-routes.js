@@ -247,14 +247,33 @@ const redirect = async (req, res) => {
 }
 
 // Exports our routes
-export default {
-    authenticated: authenticated,
-    registerUser: registerUser,
-    loginUser: loginUser,
-    createShortenedURL: createShortenedURL,
-    readURLs: readURLs,
-    readURL: readURL,
-    updateURL: updateURL,
-    deleteURL: deleteURL,
-    redirect: redirect
+export default (server) => {
+
+    // Route for determining whether a user is authenticated or no
+    server.get("/api/authenticated", authenticated)
+
+    // Route for registering a user
+    server.post("/api/register", registerUser)
+
+    // Route for logging in a user
+    server.post("/api/login", loginUser)
+
+    // Route for creating a new url
+    server.post("/api/urls", createShortenedURL)
+
+    // Route for reading a all user's URLs
+    server.get("/api/urls/", readURLs)
+
+    // Route for reading a all user's URLs
+    server.get("/api/urls/:id", readURL)
+
+    // Route for updating a user's URL
+    server.put("/api/urls/", updateURL)
+    server.patch("/api/urls/", updateURL)
+
+    // Route for deleting a user's URL
+    server.delete("/api/urls/", deleteURL)
+
+    // Route for redirecting users to another url
+    server.get("/*", redirect)
 }
