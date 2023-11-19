@@ -1,6 +1,9 @@
 // The dotenv module allows us to use enviroment variables stored in the .env file
 import dotenv from "dotenv"
 
+// The seedrandom module allows us to generate random numbers from a seed
+import seedrandom from "seedrandom"
+
 // The crytpo module allows us to perform cryptographic functions
 import crypto from "crypto"
 
@@ -35,18 +38,19 @@ const registerUser = async (req, res) => {
         return
     }
 
-    // Generates a random 32 byte salt for the password hash
+    // Get's the user's salt
+    const getRandomNumber = seedrandom(process.env.salt_seed + req.body.username)
     let salt = ""
     for (let iteration = 0; iteration < 16; iteration++) {
-        salt += Math.round(Math.random() * 255).toString(16).padStart(2, "0")
+        salt += Math.round(getRandomNumber() * 255).toString(16).padStart(2, "0")
     }
 
     // Hashes the password with the salt
     const password_hash = crypto.createHash("sha256").update(salt + req.body.password).digest("hex")
 
     // Inserts the user data into the database'
-    query_options = [req.body.username, password_hash, salt]
-    database_response = await database_client.query("INSERT INTO users (username, password_hash, password_salt) VALUES ($1, $2, $3) RETURNING *;", query_options)
+    query_options = [req.body.username, password_hash]
+    database_response = await database_client.query("INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING *;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Unable to register account.")
         return
@@ -60,19 +64,17 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
 
     // Get's the user's salt
-    let query_options = [req.body.username]
-    let database_response = await database_client.query("SELECT password_salt FROM users WHERE username = $1;", query_options)
-    if (database_response.rowCount === 0) {
-        sendBadRequest(req, res, "Credentials are invalid.")
-        return
+    const getRandomNumber = seedrandom(process.env.salt_seed + req.body.username)
+    let salt = ""
+    for (let iteration = 0; iteration < 16; iteration++) {
+        salt += Math.round(getRandomNumber() * 255).toString(16).padStart(2, "0")
     }
-    let salt = database_response.rows[0].password_salt
 
     const password_hash = crypto.createHash("sha256").update(salt + req.body.password).digest("hex")
 
     // Verifies credentials
-    query_options = [req.body.username, password_hash]
-    database_response = await database_client.query("SELECT username FROM users WHERE username = $1 AND password_hash = $2;", query_options)
+    let query_options = [req.body.username, password_hash]
+    let database_response = await database_client.query("SELECT username FROM users WHERE username = $1 AND password_hash = $2;", query_options)
     if (database_response.rowCount === 0) {
         sendBadRequest(req, res, "Credentials are invalid.")
         return
@@ -129,8 +131,8 @@ const logoutUser = async (req, res) => {
     // Clears the session id cookie
     res.clearCookie("session_id")
 
-    // Sends nothing right now
-    res.json([])
+    // Sends success
+    res.json({ message: "Success" })
 }
 
 // Whenever this route is called, create a new URL

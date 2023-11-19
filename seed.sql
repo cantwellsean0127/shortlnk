@@ -6,8 +6,7 @@ CREATE SEQUENCE shortened_url_sequence;
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
-    password_hash CHAR(64) NOT NULL,
-    password_salt CHAR(32) NOT NULL
+    password_hash CHAR(64) NOT NULL
 );
 
 CREATE TABLE urls (
