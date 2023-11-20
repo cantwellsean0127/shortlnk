@@ -41,18 +41,29 @@ const createCard = (card_data) => {
     name.textContent = card_data.name
     card.appendChild(name)
 
-    // Creates the shortened url paragraph
-    const shortened_url = document.createElement("p")
-    shortened_url.classList.add("shortened-url")
+    // Gets the location for the current browser
     let location = window.location.href
     if (location[location.length - 1] === "/") location = location.slice(0, location.length - 1)
-    shortened_url.textContent = location + card_data.shortened_url
+
+    // Creates the shortened url link
+    const shortened_url = document.createElement("a")
+    shortened_url.classList.add("shortened-url")
+    const full_shortend_url = location + card_data.shortened_url
+    shortened_url.textContent = full_shortend_url
+    shortened_url.href = full_shortend_url
+    shortened_url.target = "_blank"
     card.appendChild(shortened_url)
 
-    // Creates the target url paragraph
-    const target_url = document.createElement("p")
+    // Adds a break between the two links
+    card.appendChild(document.createElement("br"))
+
+    // Creates the target url link
+    const target_url = document.createElement("a")
     target_url.classList.add("target-url")
-    target_url.textContent = card_data.target_url
+    const full_target_url = card_data.target_url
+    target_url.textContent = full_target_url
+    target_url.href = full_target_url
+    target_url.target = "_blank"
     card.appendChild(target_url)
 }
 
