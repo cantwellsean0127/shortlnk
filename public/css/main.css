@@ -35,6 +35,23 @@ button:hover {
     background-color: var(--primary-color-darker);
 }
 
+a {
+    text-decoration: none;
+    color: inherit;
+    float: left;
+    padding-right: 5px;
+}
+
+a:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.copy-icon {
+    float: right;
+    cursor: pointer;
+}
+
 input[type="text"],
 input[type="password"] {
     width: calc(100% - 20px);

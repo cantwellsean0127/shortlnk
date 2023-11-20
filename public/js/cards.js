@@ -54,6 +54,14 @@ const createCard = (card_data) => {
     shortened_url.target = "_blank"
     card.appendChild(shortened_url)
 
+    // Creates the copy icon for copying the link to the user's clipboard
+    const shortened_url_copy = document.createElement("img")
+    shortened_url_copy.src = "/images/copy-icon-16px.png"
+    shortened_url_copy.alt = "Copy to clipboard icon"
+    shortened_url_copy.classList.add("copy-icon")
+    shortened_url_copy.addEventListener("click", () => navigator.clipboard.writeText(location + card_data.shortened_url))
+    card.appendChild(shortened_url_copy)
+
     // Adds a break between the two links
     card.appendChild(document.createElement("br"))
 
@@ -65,6 +73,14 @@ const createCard = (card_data) => {
     target_url.href = full_target_url
     target_url.target = "_blank"
     card.appendChild(target_url)
+
+    // Creates the copy icon for copying the link to the user's clipboard
+    const target_url_copy = document.createElement("img")
+    target_url_copy.src = "/images/copy-icon-16px.png"
+    target_url_copy.alt = "Copy to clipboard icon"
+    target_url_copy.classList.add("copy-icon")
+    target_url_copy.addEventListener("click", () => navigator.clipboard.writeText(card_data.shortened_url))
+    card.appendChild(target_url_copy)
 }
 
 // Shows the card container
